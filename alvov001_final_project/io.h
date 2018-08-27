@@ -1,5 +1,6 @@
-#ifndef __io_h__
-#define __io_h__
+#ifndef IO_H_
+#define IO_H_
+
 
 void LCD_init();
 void LCD_ClearScreen(void);
@@ -11,5 +12,6 @@ void delay_ms(int miliSec);
 
 unsigned char * LCD_To_String(unsigned short num, unsigned char * string, unsigned char size);
 
-#endif
+
+#endif /* IO_H_ */
 

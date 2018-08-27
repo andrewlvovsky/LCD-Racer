@@ -9,23 +9,19 @@
 #include <avr/interrupt.h>
 #include <stdio.h>
 #include "io.h"
-#include "useful.h"
+#include "joystick.h"
+#include "pwm.h"
+#include "timer.h"
 
-#define REF_AVCC (1 <<REFS0) // Reference = AVCC = 5 V
-#define REF_INT (1 << REFS0) | (1 << REFS1) //Internal reference 2.56 V
-#define UPAxisInit 543
-#define LRAxisInit 551
-
-void wait(long numOP);
-
-/*Define user variables and functions for your state machines here.*/
+/*-------------------------- Global Variables --------------------------------*/
 unsigned short message;
 unsigned short val1;
 unsigned short val2;
 unsigned short temp;
-unsigned char temp_array[32];
+unsigned char temp_array[100];
 unsigned char bVal;
 
+/*--------------------------- Task Scheduler ---------------------------------*/
 task tasks[2];
 
 const unsigned char tasksNum = 2;
@@ -51,15 +47,7 @@ void TimerISR() {
 	processingRdyTasks = 0;
 }
 
-// In our approach, the C programmer does not touch this ISR, but rather TimerISR()
-ISR(TIMER1_COMPA_vect) {
-	// CPU automatically calls when TCNT1 == OCR1 (every 1 ms per TimerOn settings)
-	_avr_timer_cntcurr--; // Count down to 0 rather than up to TOP
-	if (_avr_timer_cntcurr == 0) { // results in a more efficient compare
-		TimerISR(); // Call the ISR that the user uses
-		_avr_timer_cntcurr = _avr_timer_M;
-	}
-}
+/*-------------------------------------------------------------------------*/
 
 int TickFct_Joystick(int state);
 int TickFct_LCD_Output(int state);
@@ -150,7 +138,7 @@ int TickFct_Joystick(int state) {
 		default: // ADD default behaviour below
 			break;
 	} // State actions
-
+	return state;
 }
 
 enum SCREEN_States { SCREEN_INIT, SCREEN_WAIT } SCREEN_State;
@@ -211,10 +199,4 @@ int main() {
 	} // while (1)
 	
 	return 0;
-}
-
-void wait(long numOP){
-	for( long i = 0; i < numOP; i++){
-		asm("nop");
-	}
 }

@@ -63,8 +63,7 @@ void LCD_DisplayNumber( unsigned char column, const unsigned char* number) {
 	unsigned char c = column;
 	while(*number) {
 		LCD_Cursor(c++);
-		LCD_WriteData(*number
-		++);
+		LCD_WriteData(*number++);
 	}
 }
 
