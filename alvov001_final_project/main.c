@@ -14,19 +14,13 @@
 #include "timer.h"
 
 /*-------------------------- Global Variables --------------------------------*/
-unsigned short message;
-unsigned short val1;
-unsigned short val2;
 unsigned short temp;
-unsigned char temp_array[100];
-unsigned char bVal;
-
 /*--------------------------- Task Scheduler ---------------------------------*/
 task tasks[2];
 
 const unsigned char tasksNum = 2;
 const unsigned long periodJoystick = 50;
-const unsigned long periodLCD_Output = 50;
+const unsigned long periodLCD_Output = 100;
 
 const unsigned long tasksPeriodGCD = 50;
 
@@ -54,7 +48,6 @@ int TickFct_LCD_Output(int state);
 
 enum STICK_States { STICK_INIT, STICK_WAIT, STICK_UP, STICK_DOWN, STICK_LEFT, STICK_RIGHT } STICK_State;
 int TickFct_Joystick(int state) {
-	bVal = 0x00;
 	
 	//ADMUX = REF_AVCC | 0x00;
 	//wait(300);
@@ -97,24 +90,16 @@ int TickFct_Joystick(int state) {
 			//}
 			break;
 		case STICK_UP:
-			if (temp != val2) {
-				state = STICK_WAIT;
-			}
+		
 			break;
 		case STICK_DOWN:
-			if (temp != val2) {
-				state = STICK_WAIT;
-			}
+		
 			break;
 		case STICK_LEFT:
-			if (temp != val1) {
-				state = STICK_WAIT;
-			}
+		
 			break;
 		case STICK_RIGHT:
-			if (temp != val1) {
-				state = STICK_WAIT;
-			}
+		
 			break;
 		default:
 			state = STICK_WAIT;
@@ -124,16 +109,16 @@ int TickFct_Joystick(int state) {
 		case STICK_WAIT:
 			break;
 		case STICK_UP:
-			PORTB = bVal;
+			//PORTB = bVal;
 			break;
 		case STICK_DOWN:
-			PORTB = bVal;
+			//PORTB = bVal;
 			break;
 		case STICK_LEFT:
-			PORTB = bVal;
+			//PORTB = bVal;
 			break;
 		case STICK_RIGHT:
-			PORTB = bVal;
+			//PORTB = bVal;
 			break;
 		default: // ADD default behaviour below
 			break;
@@ -155,7 +140,11 @@ int TickFct_LCD_Output(int state) {
 
 	switch(state) { // State actions
 		case SCREEN_WAIT:
-			LCD_DisplayString(1, LCD_To_String(ADC, temp_array, 4));
+			fetchAnalogStick();
+			joystickTest(); // converts analog input to X and Y for debugging
+// 			LCD_ClearScreen();
+// 			LCD_Cursor(1);
+// 			LCD_WriteData('>');
 			break;
 		default: // ADD default behaviour below
 			break;

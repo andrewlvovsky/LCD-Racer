@@ -58,12 +58,11 @@ void LCD_DisplayString( unsigned char column, const unsigned char* string) {
    }
 }
 
-void LCD_DisplayNumber( unsigned char column, const unsigned char* number) {
-	LCD_ClearScreen();
+void LCD_DisplayString_NoClear(unsigned char column, const unsigned char *string) {
 	unsigned char c = column;
-	while(*number) {
+	while(*string) {
 		LCD_Cursor(c++);
-		LCD_WriteData(*number++);
+		LCD_WriteData(*string++);
 	}
 }
 
@@ -79,16 +78,14 @@ void LCD_Cursor(unsigned char column) {
 
 void delay_ms(int miliSec) //for 8 Mhz crystal
 {
-    int i,j;
-    for(i=0;i<miliSec;i++)
-    for(j=0;j<775;j++)
-  {
-   asm("nop");
-  }
+	int i,j;
+	for(i=0;i<miliSec;i++)
+	for(j=0;j<775;j++) {
+		asm("nop");
+	}
 }
 
 unsigned char * LCD_To_String(unsigned short num, unsigned char * string, unsigned char size) {
-
 	string[size - 1] = '\0';
 
 	for (short i = size - 2; i >= 0; i--) {

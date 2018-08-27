@@ -9,11 +9,7 @@
 #include <avr/interrupt.h>
 #include <stdio.h>
 #include "joystick.h"
-
-#define REF_AVCC (1 <<REFS0) // Reference = AVCC = 5 V
-#define REF_INT (1 << REFS0) | (1 << REFS1) //Internal reference 2.56 V
-#define UPAxisInit 543
-#define LRAxisInit 551
+#include "io.h"
 
 void ADC_init() {
 	ADCSRA |= (1 << ADEN) | (1 << ADSC) | (1 << ADATE);
@@ -24,8 +20,32 @@ void ADC_init() {
 	// the previous conversion completes.
 }
 
-void wait(long numOP){
+void wait(long numOP) {
 	for( long i = 0; i < numOP; i++){
 		asm("nop");
 	}
+}
+
+void joystickTest() {
+	unsigned char temp_array[100];
+	
+	LCD_DisplayString(1, "X:");
+	LCD_DisplayString_NoClear(3, LCD_To_String(coords[0], temp_array, 5));
+	LCD_DisplayString_NoClear(17, "Y:");
+	LCD_DisplayString_NoClear(19, LCD_To_String(coords[1], temp_array, 5));
+}
+
+void fetchAnalogStick() {
+	unsigned short val1;
+	unsigned short val2;
+	
+	ADMUX = REF_AVCC | 0x00;
+	wait(300);
+	val1 = ADC;
+	ADMUX = REF_AVCC | 0x01;
+	wait(300);
+	val2 = ADC;
+	
+	coords[0] = val1;
+	coords[1] = val2;
 }
