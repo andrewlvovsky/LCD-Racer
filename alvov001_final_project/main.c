@@ -19,21 +19,32 @@ unsigned short temp;
 unsigned char characterCursorPos;
 unsigned char enemyCursorPos;
 
+/*-------------------------- Helper Functions --------------------------------*/
+
+void refreshDisplay() {
+	LCD_ClearScreen();
+	LCD_DisplayString_NoClear(32, (const unsigned char *)(" "));	// needed for movement of characters to be seen
+	LCD_Cursor(characterCursorPos);
+	LCD_WriteData('>');
+	//LCD_Cursor(enemyCursorPos);
+	//LCD_WriteData('?');
+}
+
 /*--------------------------- Task Scheduler ---------------------------------*/
 
 task tasks[2];
 const unsigned char tasksNum = 2;
-const unsigned long periodJoystick = 25;
-const unsigned long periodLCD_Output = 25;
+const unsigned long periodJoystick = 50;
+const unsigned long periodLCD_Output = 50;
 
-const unsigned long tasksPeriodGCD = 25;
+const unsigned long tasksPeriodGCD = 50;
 
 unsigned char processingRdyTasks = 0;
 
 void TimerISR() {
 	unsigned char i;
 	if (processingRdyTasks) {
-		printf("Period too short to complete boobs\n");
+		printf("Period too short to complete tasks\n");
 	}
 	processingRdyTasks = 1;
 	for (i = 0; i < tasksNum; ++i) { // Heart of scheduler code
@@ -50,6 +61,7 @@ void TimerISR() {
 
 int TickFct_Joystick(int state);
 int TickFct_LCD_Output(int state);
+int TickFct_Enemy_Generator(int state);
 
 enum STICK_States { STICK_INIT, STICK_WAIT, STICK_UP, STICK_DOWN, STICK_LEFT, STICK_RIGHT } STICK_State;
 int TickFct_Joystick(int state) {
@@ -149,20 +161,19 @@ int TickFct_LCD_Output(int state) {
 	switch(state) { // State actions
 		case SCREEN_UPDATE:
 			fetchAnalogStick();
-			//joystickTest(); // converts analog input to X and Y for debugging
- 			LCD_ClearScreen();
-			LCD_DisplayString_NoClear(32, (const unsigned char *)(" "));	// needed for movement of characters to be seen
- 			LCD_Cursor(characterCursorPos);
- 			LCD_WriteData('>');
-			//LCD_Cursor(enemyCursorPos);
-			//LCD_WriteData('?');
-			
+			refreshDisplay();
+			//joystickTest(); // converts analog input to X and Y coords on LCD for debugging
 			break;
 		default: // ADD default behaviour below
 			break;
 	} // State actions
 	SCREEN_State = state;
 	return state;
+}
+
+enum ENEMY_States { ENEMY_INIT, ENEMY_UPDATE };
+int TickFct_Enemy_Generator(int state) {
+	
 }
 
 int main() {
