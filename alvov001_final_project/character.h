@@ -10,10 +10,11 @@
 #define CHARACTER_H_
 
 
-typedef struct character {
+typedef struct enemy {
 	unsigned char cursorPos;
 	unsigned char sprite;
-} character;
+	unsigned char isOnScreen;
+} enemy;
 
 
 #endif /* CHARACTER_H_ */
