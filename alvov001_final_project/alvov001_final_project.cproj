@@ -149,6 +149,12 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="character.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="character.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="io.c">
       <SubType>compile</SubType>
     </Compile>

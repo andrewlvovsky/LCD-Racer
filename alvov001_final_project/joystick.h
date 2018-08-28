@@ -12,8 +12,8 @@
 
 #define REF_AVCC (1 <<REFS0) // Reference = AVCC = 5 V
 #define REF_INT (1 << REFS0) | (1 << REFS1) //Internal reference 2.56 V
-#define UPAxisInit 543
-#define LRAxisInit 551
+#define JOYSTICK_INIT 632
+#define DELTA 25
 
 unsigned short coords[2];
 

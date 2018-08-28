@@ -14,17 +14,22 @@
 #include "timer.h"
 
 /*-------------------------- Global Variables --------------------------------*/
+
 unsigned short temp;
+unsigned char characterCursorPos;
+unsigned char enemyCursorPos;
+
 /*--------------------------- Task Scheduler ---------------------------------*/
+
 task tasks[2];
-
 const unsigned char tasksNum = 2;
-const unsigned long periodJoystick = 50;
-const unsigned long periodLCD_Output = 100;
+const unsigned long periodJoystick = 25;
+const unsigned long periodLCD_Output = 25;
 
-const unsigned long tasksPeriodGCD = 50;
+const unsigned long tasksPeriodGCD = 25;
 
 unsigned char processingRdyTasks = 0;
+
 void TimerISR() {
 	unsigned char i;
 	if (processingRdyTasks) {
@@ -48,77 +53,80 @@ int TickFct_LCD_Output(int state);
 
 enum STICK_States { STICK_INIT, STICK_WAIT, STICK_UP, STICK_DOWN, STICK_LEFT, STICK_RIGHT } STICK_State;
 int TickFct_Joystick(int state) {
-	
-	//ADMUX = REF_AVCC | 0x00;
-	//wait(300);
-	//val1 = ADC;
-	//ADMUX = REF_AVCC | 0x01;
-	//wait(300);
-	//val2 = ADC;
-	
-	switch(STICK_State) { // Transitions
+	switch(state) { // Transitions
 		case STICK_INIT:
-			//LCD_DisplayString(1, "I'm here");
 			state = STICK_WAIT;
-			//LCD_DisplayString(1, "You are my puppyGive me the bone");
+			characterCursorPos = 1;
+			enemyCursorPos = 16;
 			break;
 		case STICK_WAIT:
-			//LCD_DisplayString(1, "You are cool");
-			//if (val2 < LRAxisInit-10) {
-				//state = STICK_UP;
-				//message = val2;
-				//bVal |= 0x08;
-				//temp = val2;
-			//}
-			//else if (val2 > LRAxisInit+10) {
-				//state = STICK_DOWN;
-				//message = val2;
-				//bVal |= 0x04;
-				//temp = val2;
-			//}
-			//else if (val1 > UPAxisInit+10) {
-				//state = STICK_LEFT;
-				//message = val1;
-				//bVal |= 0x01;
-				//temp = val1;
-			//}
-			//else if (val1 < UPAxisInit-10) {
-				//state = STICK_RIGHT;
-				//message = val1;
-				//bVal |= 0x02;
-				//temp = val1;
-			//}
+			if (coords[1] < JOYSTICK_INIT - DELTA) {
+				if (characterCursorPos >= 17) {
+					characterCursorPos = characterCursorPos - 16;
+					state = STICK_UP;
+				}
+				else 
+					state = STICK_WAIT;
+			}
+			else if (coords[1] > JOYSTICK_INIT + DELTA) {
+				if (characterCursorPos <= 16) {
+					characterCursorPos = characterCursorPos + 16;
+					state = STICK_DOWN;
+				}
+				else
+					state = STICK_WAIT;
+			}
+			else if (coords[0] < JOYSTICK_INIT - DELTA) {
+				if (characterCursorPos > 1 && characterCursorPos != 17) {
+					characterCursorPos--;
+					state = STICK_LEFT;
+				}
+				else
+					state = STICK_WAIT;
+			}
+			else if (coords[0] > JOYSTICK_INIT + DELTA) {
+				if (characterCursorPos < 16 || (characterCursorPos > 16 && characterCursorPos < 32)) {
+					characterCursorPos++;
+					state = STICK_RIGHT;
+				}
+				else
+					state = STICK_WAIT;
+			}
+			else {
+				state = STICK_WAIT;
+			}
 			break;
 		case STICK_UP:
-		
+			state = STICK_WAIT;
 			break;
 		case STICK_DOWN:
-		
+			state = STICK_WAIT;
 			break;
 		case STICK_LEFT:
-		
+			state = STICK_WAIT;
 			break;
 		case STICK_RIGHT:
-		
+			state = STICK_WAIT;
 			break;
 		default:
 			state = STICK_WAIT;
 	} // Transitions
 
-	switch(STICK_State) { // State actions
+	switch(state) { // State actions
 		case STICK_WAIT:
+			set_PWM(0);
 			break;
 		case STICK_UP:
-			//PORTB = bVal;
+			set_PWM(246.94);
 			break;
 		case STICK_DOWN:
-			//PORTB = bVal;
+			set_PWM(329.63);
 			break;
 		case STICK_LEFT:
-			//PORTB = bVal;
+			set_PWM(293.66);
 			break;
 		case STICK_RIGHT:
-			//PORTB = bVal;
+			set_PWM(220.00);
 			break;
 		default: // ADD default behaviour below
 			break;
@@ -126,25 +134,29 @@ int TickFct_Joystick(int state) {
 	return state;
 }
 
-enum SCREEN_States { SCREEN_INIT, SCREEN_WAIT } SCREEN_State;
+enum SCREEN_States { SCREEN_INIT, SCREEN_UPDATE } SCREEN_State;
 int TickFct_LCD_Output(int state) {
 	switch(state) { // Transitions
 		case SCREEN_INIT:
-			state = SCREEN_WAIT;
+			state = SCREEN_UPDATE;
 			break;
-		case SCREEN_WAIT:
+		case SCREEN_UPDATE:
 			break;
 		default:
 			state = SCREEN_INIT;
 	} // Transitions
 
 	switch(state) { // State actions
-		case SCREEN_WAIT:
+		case SCREEN_UPDATE:
 			fetchAnalogStick();
-			joystickTest(); // converts analog input to X and Y for debugging
-// 			LCD_ClearScreen();
-// 			LCD_Cursor(1);
-// 			LCD_WriteData('>');
+			//joystickTest(); // converts analog input to X and Y for debugging
+ 			LCD_ClearScreen();
+			LCD_DisplayString_NoClear(32, (const unsigned char *)(" "));	// needed for movement of characters to be seen
+ 			LCD_Cursor(characterCursorPos);
+ 			LCD_WriteData('>');
+			//LCD_Cursor(enemyCursorPos);
+			//LCD_WriteData('?');
+			
 			break;
 		default: // ADD default behaviour below
 			break;
@@ -155,13 +167,14 @@ int TickFct_LCD_Output(int state) {
 
 int main() {
 	DDRA = 0x00; PORTA = 0xFF; //Setting A to be input (Input from Analog Stick)
-	DDRB = 0xFF; PORTB = 0x00; //Setting B to be output (Debug LEDs for Analog Stick)
+	DDRB = 0xFF; PORTB = 0x40; //Setting B to be output (Speaker at PB4)
 	DDRC = 0xFF; PORTC = 0x00; //Setting C to be output (LCD Screen)
 	DDRD = 0xFF; PORTD = 0x00; //Setting D to be output (LCD Screen)
 	
 	// Initializes the LCD display and ADC functionality
 	LCD_init();
 	ADC_init();
+	PWM_on();
 
 	STICK_State = STICK_INIT; // Initial state
 	SCREEN_State = SCREEN_INIT;
