@@ -23,7 +23,7 @@ unsigned char buttonFour = 0x00;
 
 /*-------------------------- Global Variables --------------------------------*/
 
-#define TASKS_NUM 4
+#define TASKS_NUM 6
 #define MAX_ENEMIES 6
 #define MENU_REFRESH_TIME 15
 
@@ -31,7 +31,7 @@ const unsigned short NON_SHOOTABLE_SPRITE = 270;
 const unsigned short SHOOTABLE_SPRITE = 250;
 const unsigned short BULLET_SPRITE = 45;
 
-unsigned char characterCursorPos;
+unsigned char characterCursorPos, twoPlayerCursorPos;
 unsigned char enemyMovementTime, enemyMovementFactor = 20;
 unsigned char localTime, menuTime = 0;
 unsigned short scoreTime, globalTime;
@@ -62,13 +62,14 @@ void refreshDisplay() {
 	LCD_DisplayString_NoClear(32, (const unsigned char *)(" "));	// needed for movement of characters to be seen
 	LCD_Cursor(characterCursorPos);
 	LCD_WriteData('>');
+	LCD_Cursor(twoPlayerCursorPos);
+	LCD_WriteData('<');
 	LCD_Cursor(bullet.cursorPos);
 	LCD_WriteData(bullet.sprite);
 	for (unsigned char i = 0; i < MAX_ENEMIES; i++) {
 		LCD_Cursor(enemies[i].cursorPos);
 		LCD_WriteData(enemies[i].sprite);
 	}
-	
 }
 
 void gameOverDisplay() {
@@ -96,8 +97,10 @@ void initCharacters() {
 /*--------------------------- Task Scheduler ---------------------------------*/
 
 task tasks[TASKS_NUM];
-const unsigned long periodJoystick = 50;
+const unsigned long periodInput = 50;
+const unsigned long periodTwo_Player_Input = 50;
 const unsigned long periodShoot = 25;
+const unsigned long periodTwo_Player_Shoot = 25;
 const unsigned long periodLCD_Output = 50;
 const unsigned long periodEnemy_Generator = 50;
 const unsigned long tasksPeriodGCD = 25;
@@ -115,13 +118,15 @@ void TimerISR() {
 
 /*-------------------------------------------------------------------------*/
 
-int TickFct_Joystick(int state);
+int TickFct_Input(int state);
 int TickFct_Shoot(int state);
 int TickFct_LCD_Output(int state);
 int TickFct_Enemy_Generator(int state);
+int TickFct_TwoPlayer_Input(int state);
+int TickFct_TwoPlayer_Shoot(int state);
 
 enum STICK_States { STICK_INIT, STICK_BUTTON_RELEASE, STICK_WAIT, STICK_UP, STICK_DOWN, STICK_LEFT, STICK_RIGHT, STICK_GAME_OVER } STICK_State;
-int TickFct_Joystick(int state) {
+int TickFct_Input(int state) {
 	switch(state) { // Transitions
 		case STICK_INIT:
 			characterCursorPos = 1;
@@ -231,6 +236,118 @@ int TickFct_Joystick(int state) {
 	return state;
 }
 
+enum TWO_INPUT_States { TWO_STICK_INIT, TWO_STICK_BUTTON_RELEASE, TWO_STICK_WAIT, TWO_STICK_UP, TWO_STICK_DOWN, TWO_STICK_LEFT, TWO_STICK_RIGHT, TWO_STICK_GAME_OVER } TWO_STICK_State;
+int TickFct_TwoPlayer_Input(int state) {
+	switch(state) { // Transitions
+		case TWO_STICK_INIT:
+			characterCursorPos = 1;
+			if(buttonTwo)
+				state = TWO_STICK_WAIT;
+			else
+				state = TWO_STICK_INIT;
+			break;
+		case TWO_STICK_BUTTON_RELEASE:
+			if(buttonTwo)
+				state = TWO_STICK_BUTTON_RELEASE;
+			else
+				state = TWO_STICK_INIT;
+			break;
+		case TWO_STICK_WAIT:
+			if (coords[1] < JOYSTICK_INIT - DELTA) {
+				if (characterCursorPos >= 17) {
+					characterCursorPos = characterCursorPos - 16;
+					state = TWO_STICK_UP;
+				}
+				else
+					state = TWO_STICK_WAIT;
+			}
+			else if (coords[1] > JOYSTICK_INIT + DELTA) {
+				if (characterCursorPos <= 16) {
+					characterCursorPos = characterCursorPos + 16;
+					state = TWO_STICK_DOWN;
+				}
+				else
+					state = TWO_STICK_WAIT;
+			}
+			else if (coords[0] < JOYSTICK_INIT - DELTA) {
+				if (characterCursorPos > 1 && characterCursorPos != 17) {
+					characterCursorPos--;
+					state = TWO_STICK_LEFT;
+				}
+				else
+					state = TWO_STICK_WAIT;
+			}
+			else if (coords[0] > JOYSTICK_INIT + DELTA) {
+				if (characterCursorPos < 16 || (characterCursorPos > 16 && characterCursorPos < 32)) {
+					characterCursorPos++;
+					state = TWO_STICK_RIGHT;
+				}
+				else
+					state = TWO_STICK_WAIT;
+			}
+			else {
+				state = TWO_STICK_WAIT;
+			}
+			for (unsigned char i = 0; i < MAX_ENEMIES; i++) {
+				if (characterCursorPos == enemies[i].cursorPos) {
+					state = TWO_STICK_GAME_OVER;
+					break;
+				}
+			}
+			break;
+		case TWO_STICK_UP:
+			state = TWO_STICK_WAIT;
+			break;
+		case TWO_STICK_DOWN:
+			state = TWO_STICK_WAIT;
+			break;
+		case TWO_STICK_LEFT:
+			state = TWO_STICK_WAIT;
+			break;
+		case TWO_STICK_RIGHT:
+			state = TWO_STICK_WAIT;
+			break;
+		case TWO_STICK_GAME_OVER:
+			if(buttonTwo)
+				state = TWO_STICK_BUTTON_RELEASE;
+			else
+				state = TWO_STICK_GAME_OVER;
+			break;
+		default:
+			state = TWO_STICK_WAIT;
+	} // Transitions
+
+	switch(state) { // State actions
+		case TWO_STICK_INIT:
+			set_PWM(0);
+			break;
+		case TWO_STICK_WAIT:
+			set_PWM(0);
+			break;
+		case TWO_STICK_BUTTON_RELEASE:
+			set_PWM(400.00);
+			break;
+		case TWO_STICK_UP:
+			set_PWM(246.94);
+			break;
+		case TWO_STICK_DOWN:
+			set_PWM(329.63);
+			break;
+		case TWO_STICK_LEFT:
+			set_PWM(293.66);
+			break;
+		case TWO_STICK_RIGHT:
+			set_PWM(220.00);
+			break;
+		case TWO_STICK_GAME_OVER:
+			set_PWM(100.00);
+			break;
+		default: // ADD default behaviour below
+			break;
+	} // State actions
+	return state;
+}
+
 enum SHOOT_States { SHOOT_INIT, SHOOT_BUTTON_RELEASE, SHOOT_WAIT, SHOOT_GO, SHOOT_GAME_OVER } SHOOT_State;
 int TickFct_Shoot(int state) {
 	switch(state) { // Transitions
@@ -271,6 +388,12 @@ int TickFct_Shoot(int state) {
 		case SHOOT_BUTTON_RELEASE:
 			break;
 		case SHOOT_WAIT:
+			for (unsigned char i = 0; i < MAX_ENEMIES; i++) {
+				if (characterCursorPos == enemies[i].cursorPos) {
+					state = SHOOT_GAME_OVER;
+					break;
+				}
+			}
 			break;
 		case SHOOT_GO:
 			if(bullet.cursorPos == 0) {
@@ -299,14 +422,115 @@ int TickFct_Shoot(int state) {
 					}
 				}
 			}
+			
+			for (unsigned char i = 0; i < MAX_ENEMIES; i++) {
+				if (characterCursorPos == enemies[i].cursorPos) {
+					state = SHOOT_GAME_OVER;
+					break;
+				}
+			}
 			break;
 		case SHOOT_GAME_OVER:
 			break;
 		default:
+			state = SHOOT_INIT;
 			break;
 	} // State actions
 	
 	SHOOT_State = state;
+	return state;
+}
+
+enum TWO_SHOOT_States { TWO_SHOOT_INIT, TWO_SHOOT_BUTTON_RELEASE, TWO_SHOOT_WAIT, TWO_SHOOT_GO, TWO_SHOOT_GAME_OVER } TWO_SHOOT_State;
+int TickFct_TwoPlayer_Shoot(int state) {
+	switch(state) { // Transitions
+		case TWO_SHOOT_INIT:
+			if(buttonTwo)
+				state = TWO_SHOOT_WAIT;
+			else
+				state = TWO_SHOOT_INIT;
+			break;
+		case TWO_SHOOT_BUTTON_RELEASE:
+			if(buttonTwo)
+				state = TWO_SHOOT_BUTTON_RELEASE;
+			else
+				state = TWO_SHOOT_INIT;
+			break;
+		case TWO_SHOOT_WAIT:
+			if (buttonFour || bulletOnScreen)
+				state = TWO_SHOOT_GO;
+			else
+				state = TWO_SHOOT_WAIT;
+			break;
+		case TWO_SHOOT_GO:
+			state = TWO_SHOOT_WAIT;
+			break;
+		case TWO_SHOOT_GAME_OVER:
+			if(buttonTwo)
+				state = TWO_STICK_BUTTON_RELEASE;
+			else
+				state = TWO_STICK_GAME_OVER;
+			break;
+		default:
+			break;
+	} // Transitions
+	
+	switch(state) { // State actions
+		case TWO_SHOOT_INIT:
+			break;
+		case TWO_SHOOT_BUTTON_RELEASE:
+			break;
+		case TWO_SHOOT_WAIT:
+			for (unsigned char i = 0; i < MAX_ENEMIES; i++) {
+				if (characterCursorPos == enemies[i].cursorPos) {
+					state = TWO_SHOOT_GAME_OVER;
+					break;
+				}
+			}
+			break;
+		case TWO_SHOOT_GO:
+			if(bullet.cursorPos == 0) {
+				set_PWM(500.00);
+				bulletOnScreen = 1;
+				bullet.cursorPos = characterCursorPos + 1;	//spawn bullet in front of character
+			}
+			else if (bullet.cursorPos != 0) {
+				if (bullet.cursorPos != 16 && bullet.cursorPos != 32)
+					bullet.cursorPos++;
+				else {
+					bullet.cursorPos = 0;	// bullet didn't hit any enemies, so put bullet back
+					bulletOnScreen = 0;
+				}
+				for (unsigned char i = 0; i < MAX_ENEMIES; i++) {
+					if (bullet.cursorPos == enemies[i].cursorPos && enemies[i].sprite == SHOOTABLE_SPRITE) {
+						enemies[i].cursorPos = 0;
+						bullet.cursorPos = 0;
+						bulletOnScreen = 0;
+						break;
+					}
+					if (bullet.cursorPos == enemies[i].cursorPos && enemies[i].sprite == NON_SHOOTABLE_SPRITE) {
+						bullet.cursorPos = 0;
+						bulletOnScreen = 0;
+						break;
+					}
+				}
+			}
+		
+			for (unsigned char i = 0; i < MAX_ENEMIES; i++) {
+				if (characterCursorPos == enemies[i].cursorPos) {
+					state = TWO_SHOOT_GAME_OVER;
+					break;
+				}
+			}
+			break;
+		case TWO_SHOOT_GAME_OVER:
+			break;
+		default:
+			state = TWO_SHOOT_INIT;
+			break;
+	} // State actions
+	
+	TWO_SHOOT_State = state;
 	return state;
 }
 
@@ -315,31 +539,31 @@ int TickFct_LCD_Output(int state) {
 	switch(state) { // Transitions
 		case SCREEN_INIT:
 			scoreTime = 0;
-			if(buttonOne && menuTime < MENU_REFRESH_TIME) {
+			if ((buttonOne || buttonTwo) && menuTime < MENU_REFRESH_TIME) {
 				menuTime = 0;
 				state = SCREEN_UPDATE;
 			}
-			else if (!buttonOne && menuTime < MENU_REFRESH_TIME)
+			else if (!buttonOne && !buttonTwo && menuTime < MENU_REFRESH_TIME)
 				state = SCREEN_INIT;
-			else if (!buttonOne && menuTime == MENU_REFRESH_TIME) {
+			else if (!buttonOne && !buttonTwo && menuTime == MENU_REFRESH_TIME) {
 				menuTime = 0;
 				state = SCREEN_MENU;
 			}
 			break;
 		case SCREEN_MENU:
-			if(buttonOne && menuTime < MENU_REFRESH_TIME) {
+			if((buttonOne || buttonTwo) && menuTime < MENU_REFRESH_TIME) {
 				menuTime = 0;
 				state = SCREEN_UPDATE;
 			}
-			else if (!buttonOne && menuTime < MENU_REFRESH_TIME)
+			else if (!buttonOne && !buttonTwo && menuTime < MENU_REFRESH_TIME)
 				state = SCREEN_MENU;
-			else if (!buttonOne && menuTime == MENU_REFRESH_TIME) {
+			else if (!buttonOne && !buttonTwo && menuTime == MENU_REFRESH_TIME) {
 				menuTime = 0;
 				state = SCREEN_INIT;
 			}
 			break;
 		case SCREEN_BUTTON_RELEASE:
-			if(buttonOne)
+			if(buttonOne || buttonTwo)
 				state = SCREEN_BUTTON_RELEASE;
 			else
 				state = SCREEN_INIT;
@@ -351,7 +575,7 @@ int TickFct_LCD_Output(int state) {
 			}
 			break;
 		case SCREEN_GAME_OVER:
-			if(buttonOne)
+			if(buttonOne || buttonTwo)
 				state = SCREEN_BUTTON_RELEASE;
 			else
 				state = SCREEN_GAME_OVER;
@@ -507,9 +731,15 @@ int main() {
 	// Priority assigned to lower position tasks in array
 	unsigned char i=0;
 	tasks[i].state = STICK_INIT;
-	tasks[i].period = periodJoystick;
+	tasks[i].period = periodInput;
 	tasks[i].elapsedTime = tasks[i].period;
-	tasks[i].TickFct = &TickFct_Joystick;
+	tasks[i].TickFct = &TickFct_Input;
+	
+	++i;
+	tasks[i].state = TWO_STICK_INIT;
+	tasks[i].period = periodTwo_Player_Input;
+	tasks[i].elapsedTime = tasks[i].period;
+	tasks[i].TickFct = &TickFct_TwoPlayer_Input;
 
 	++i;
 	tasks[i].state = ENEMY_INIT;
@@ -522,6 +752,12 @@ int main() {
 	tasks[i].period = periodShoot;
 	tasks[i].elapsedTime = tasks[i].period;
 	tasks[i].TickFct = &TickFct_Shoot;
+	
+	++i;
+	tasks[i].state = TWO_SHOOT_INIT;
+	tasks[i].period = periodTwo_Player_Shoot;
+	tasks[i].elapsedTime = tasks[i].period;
+	tasks[i].TickFct = &TickFct_TwoPlayer_Shoot;
 
 	++i;
 	tasks[i].state = SCREEN_INIT;
