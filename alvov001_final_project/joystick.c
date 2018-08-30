@@ -36,16 +36,16 @@ void joystickTest() {
 }
 
 void fetchAnalogStick() {
-	unsigned short val1;
-	unsigned short val2;
+	unsigned short x;
+	unsigned short y;
 	
 	ADMUX = REF_AVCC | 0x00;
 	wait(300);
-	val1 = ADC;
+	x = ADC;
 	ADMUX = REF_AVCC | 0x01;
 	wait(300);
-	val2 = ADC;
+	y = ADC;
 	
-	coords[0] = val1;
-	coords[1] = val2;
+	coords[0] = x;	// x-coord
+	coords[1] = y;	// y-coord
 }
