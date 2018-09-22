@@ -24,7 +24,7 @@ unsigned char buttonFour = 0x00;
 /*-------------------------- Global Variables --------------------------------*/
 
 #define TASKS_NUM 4
-#define MAX_ENEMIES 6
+#define MAX_ENEMIES 4
 #define MENU_REFRESH_TIME 15
 
 const unsigned short NON_SHOOTABLE_SPRITE = 270;
@@ -32,7 +32,7 @@ const unsigned short SHOOTABLE_SPRITE = 250;
 const unsigned short BULLET_SPRITE = 45;
 
 unsigned char characterCursorPos;
-unsigned char enemyMovementTime, enemyMovementFactor = 20;
+unsigned char enemyMovementTime, enemyMovementFactor = 5;
 unsigned char localTime, menuTime = 0;
 unsigned short scoreTime, globalTime;
 unsigned char dontSpawnTop = 0; 
@@ -444,25 +444,6 @@ int TickFct_Enemy_Generator(int state) {
 		case ENEMY_BUTTON_RELEASE:
 			break;
 		case ENEMY_MOVE:
-			for(unsigned char i = 0; i < MAX_ENEMIES; i++) {
-				if(!dontSpawnBottom && (enemies[i].cursorPos == 31 || enemies[i].cursorPos == 32 || enemies[i].cursorPos == 16 || enemies[i].cursorPos == 17)) {
-					dontSpawnBottom = 1;
-				}
-				else if (!dontSpawnTop && (enemies[i].cursorPos == 15 || enemies[i].cursorPos == 16 || enemies[i].cursorPos == 17 || enemies[i].cursorPos == 32 || enemies[i].cursorPos == 33)) {
-					dontSpawnTop = 1;
-				}
-			}
-			for(unsigned char i = 0; i < MAX_ENEMIES && rand() % 2; i++) {
-				if (enemies[i].cursorPos == 0 && dontSpawnBottom == 0) {
-					enemies[i].cursorPos = 33;
-				}
-				if (enemies[i].cursorPos == 0 && dontSpawnTop == 0) {
-					enemies[i].cursorPos = 17;
-				}
-			}
-			
-			dontSpawnBottom = dontSpawnTop = 0;
-			
 			if (scoreTime % enemyMovementFactor == 0 && enemyMovementTime > 1) {
 				enemyMovementTime--;
 			}
@@ -473,6 +454,25 @@ int TickFct_Enemy_Generator(int state) {
 				else
 					enemies[i].cursorPos = 0;
 			}
+			
+			for(unsigned char i = 0; i < MAX_ENEMIES; i++) {
+				if (!dontSpawnBottom && (enemies[i].cursorPos == 31 || enemies[i].cursorPos == 32 || enemies[i].cursorPos == 33 || enemies[i].cursorPos == 16 || enemies[i].cursorPos == 17)) {
+					dontSpawnBottom = 1;
+				}
+				if (!dontSpawnTop && (enemies[i].cursorPos == 15 || enemies[i].cursorPos == 16 || enemies[i].cursorPos == 17 || enemies[i].cursorPos == 32 || enemies[i].cursorPos == 33)) {
+					dontSpawnTop = 1;
+				}
+			}
+			for(unsigned char i = 0; i < MAX_ENEMIES && rand() % 2; i++) {
+				if (enemies[i].cursorPos == 0 && dontSpawnBottom == 0) {
+					enemies[i].cursorPos = 33;
+				}
+				if (enemies[i].cursorPos == 0 && dontSpawnTop == 0) {
+					enemies[i].cursorPos = 17;
+				}=
+			}
+			
+			dontSpawnBottom = dontSpawnTop = 0;
 			
 			break;
 		case ENEMY_GAME_OVER:
