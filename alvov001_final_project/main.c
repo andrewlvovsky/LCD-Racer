@@ -279,20 +279,20 @@ int TickFct_Shoot(int state) {
 				bullet.cursorPos = characterCursorPos + 1;	//spawn bullet in front of character
 			}
 			else if (bullet.cursorPos != 0) {
-				if (bullet.cursorPos != 16 && bullet.cursorPos != 32)
+				if (bullet.cursorPos != 16 && bullet.cursorPos != 32 && bulletOnScreen)
 					bullet.cursorPos++;
 				else {
 					bullet.cursorPos = 0;	// bullet didn't hit any enemies, so put bullet back
 					bulletOnScreen = 0;
 				}
 				for (unsigned char i = 0; i < MAX_ENEMIES; i++) {
-					if (bullet.cursorPos == enemies[i].cursorPos && enemies[i].sprite == SHOOTABLE_SPRITE) {
-						enemies[i].cursorPos = 0;
+					if (bullet.cursorPos == enemies[i].cursorPos && enemies[i].sprite == NON_SHOOTABLE_SPRITE) {
 						bullet.cursorPos = 0;
 						bulletOnScreen = 0;
 						break;
 					}
-					if (bullet.cursorPos == enemies[i].cursorPos && enemies[i].sprite == NON_SHOOTABLE_SPRITE) {
+					if (bullet.cursorPos == enemies[i].cursorPos && enemies[i].sprite == SHOOTABLE_SPRITE) {
+						enemies[i].cursorPos = 0;
 						bullet.cursorPos = 0;
 						bulletOnScreen = 0;
 						break;
